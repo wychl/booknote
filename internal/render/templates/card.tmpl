@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>OpenDesign · 读书笔记 | {{.Title}}</title>
+    <style>
+        /* ---------- 设计令牌（由主题注入） ---------- */
+        :root {
+            {{- .CSSVars | safeCSS -}}
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--od-color-surface, #14161f);
+            font-family: var(--od-font-family, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif);
+            width: 1080px;
+            height: 1920px;
+            margin: 0 auto;
+            padding: 100px 150px 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .od-note-card {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+        }
+
+        .od-note-card::-webkit-scrollbar {
+            width: 6px;
+            background: transparent;
+        }
+        .od-note-card::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+        }
+
+        .safe-area {
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .note-content {
+            display: flex;
+            flex-direction: column;
+            gap: var(--od-space-md, 40px);
+        }
+
+        .book-header {
+            text-align: center;
+            border-bottom: 3px solid var(--od-color-divider, #2d2f3e);
+            padding-bottom: var(--od-space-sm, 24px);
+        }
+
+        .book-title {
+            font-size: var(--od-font-size-1, 84px);
+            font-weight: var(--od-font-weight-bold, 700);
+            line-height: 1.2;
+            color: var(--od-color-text-title, #f3f4f6);
+            letter-spacing: -0.01em;
+            margin-bottom: var(--od-space-sm, 24px);
+        }
+
+        .author-rating {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--od-space-md, 40px);
+            flex-wrap: wrap;
+        }
+
+        .book-author {
+            font-size: var(--od-font-size-5, 32px);
+            font-weight: var(--od-font-weight-medium, 500);
+            color: var(--od-color-secondary, #7c3aed);
+        }
+
+        .stars {
+            font-size: var(--od-font-size-5, 40px);
+            color: var(--od-color-star, #fbbf24);
+            letter-spacing: 10px;
+        }
+
+        .score-badge {
+            background: var(--od-color-accent-paper, #1f2230);
+            padding: var(--od-space-xs, 24px) var(--od-space-sm, 40px);
+            border-radius: var(--od-radius-full, 999px);
+            font-size: var(--od-font-size-5, 32px);
+            color: var(--od-color-secondary, #7c3aed);
+        }
+
+        .reflection {
+            display: flex;
+            flex-direction: column;
+            font-size: var(--od-font-size-3, 36px);
+            line-height: var(--od-line-height-body, 1.65);
+            letter-spacing: var(--od-letter-spacing-body, 0.02em);
+            color: var(--od-color-text-body, #e5e7eb);
+            margin-bottom: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .reflection strong {
+            color: var(--od-color-primary, #7c3aed);
+            font-weight: var(--od-font-weight-bold, 700);
+        }
+    </style>
+</head>
+<body>
+    <div class="od-note-card">
+        <div class="safe-area">
+            <div class="note-content">
+                <div class="book-header">
+                    <div class="book-title">{{.Title}}</div>
+                    <div class="author-rating">
+                        <span class="book-author">{{.Author}}</span>
+                        <span class="stars">{{.Stars}}</span>
+                        <span class="score-badge">豆瓣 {{.Rating}}</span>
+                    </div>
+                </div>
+                <div class="reflection">
+                    {{.NoteMainText | safeHTML}}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
