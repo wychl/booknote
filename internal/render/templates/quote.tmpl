@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>OpenDesign · 金句卡片 | {{.Quote}}</title>
+    <style>
+        /* ============================================================
+           金句卡片模板 · 符合《模板设计规范》v1.1
+           画布 1080×1920 · 主题驱动 · 无预设圆角/阴影
+           ============================================================ */
+        :root {
+            {{- .CSSVars | safeCSS -}}
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 1080px;
+            height: 1920px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--od-color-bg, #000);
+            font-family: var(--od-font-family, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif);
+        }
+
+        /* ---- 卡片容器（无预设圆角/阴影/背景色） ---- */
+        .od-quote-card {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+        }
+
+        .od-quote-card::-webkit-scrollbar {
+            width: 6px;
+            background: transparent;
+        }
+        .od-quote-card::-webkit-scrollbar-thumb {
+            background: var(--od-color-text-low, rgba(255,255,255,0.2));
+            border-radius: var(--od-radius-full, 999px);
+        }
+
+        /* ---- 安全区 ---- */
+        .safe-area {
+            position: relative;
+            z-index: 2;
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 100px 80px;
+        }
+
+        /* ---- 金句内容 ---- */
+        .quote-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        /* ---- 金句正文 ---- */
+        .quote-text {
+            font-size: var(--od-font-size-1, 120px);
+            font-weight: var(--od-font-weight-bold, 700);
+            line-height: var(--od-line-height-body, 1.65);
+            color: var(--od-color-primary, #f3f4f6);
+            letter-spacing: var(--od-letter-spacing-wide, 0.02em);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* 引号通过 ::before/::after 伪元素添加（规范 6.1） */
+        .quote-text::before {
+            content: "“";
+            color: var(--od-color-primary, #7c3aed);
+            font-size: 1.2em;
+            opacity: 0.6;
+            margin-right: 0.1em;
+            line-height: 1;
+        }
+        .quote-text::after {
+            content: "”";
+            color: var(--od-color-primary, #7c3aed);
+            font-size: 1.2em;
+            opacity: 0.6;
+            margin-left: 0.1em;
+            line-height: 1;
+        }
+
+        /* ---- 分割线 ---- */
+        .quote-divider {
+            width: 64px;
+            height: 2px;
+            background: var(--od-color-divider, #2d2f3e);
+            margin: var(--od-space-lg, 56px) auto 0;
+            opacity: 0.6;
+        }
+
+        /* ---- 来源 ---- */
+        .quote-source {
+            margin-top: var(--od-space-md, 40px);
+            font-size: var(--od-font-size-4, 34px);
+            font-weight: var(--od-font-weight-medium, 500);
+            color: var(--od-color-primary, #7c3aed);
+            letter-spacing: 0.12em;
+            text-align: center;
+            opacity: 0.85;
+        }
+
+        /* ---- 响应式缩放 ---- */
+        @media (max-width: 1100px) {
+            body {
+                transform: scale(0.9);
+                transform-origin: top center;
+            }
+        }
+        @media (max-width: 800px) {
+            body {
+                transform: scale(0.65);
+                transform-origin: top center;
+            }
+        }
+        @media (max-width: 500px) {
+            body {
+                transform: scale(0.45);
+                transform-origin: top center;
+            }
+        }
+
+        /* ---- 打印支持 ---- */
+        @media print {
+            body {
+                transform: none !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="od-quote-card">
+        <div class="safe-area">
+            <div class="quote-content">
+                <div class="quote-text">{{.Quote}}</div>
+                <div class="quote-divider"></div>
+                {{if .Source}}
+                <div class="quote-source">——{{.Source}}</div>
+                {{end}}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

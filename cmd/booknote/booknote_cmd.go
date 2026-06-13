@@ -22,14 +22,14 @@ type cardOptions struct {
 	style    string
 }
 
-func newCardCmd(comp *components) *cobra.Command {
+func newBookNoteCmd(comp *components) *cobra.Command {
 	var opts cardOptions
 
 	cmd := &cobra.Command{
 		Use:   "card [书籍ID]",
 		Short: "生成书籍笔记卡片",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runCard(cmd.Context(), comp, opts, args)
+			return runBookNoteCmd(cmd.Context(), comp, opts, args)
 		},
 	}
 
@@ -42,7 +42,7 @@ func newCardCmd(comp *components) *cobra.Command {
 	return cmd
 }
 
-func runCard(ctx context.Context, comp *components, opts cardOptions, args []string) error {
+func runBookNoteCmd(ctx context.Context, comp *components, opts cardOptions, args []string) error {
 	outputDir := getCardOutputDir(opts)
 
 	result := &Result{Success: false}
@@ -53,12 +53,7 @@ func runCard(ctx context.Context, comp *components, opts cardOptions, args []str
 		result.Error = err.Error()
 		return nil
 	}
-	result.BookNote = *bookNote
-
-	if err := applyTheme(comp, bookNote); err != nil {
-		result.Error = err.Error()
-		return nil
-	}
+	result.Data = *bookNote
 
 	htmlPath, err := renderAndSaveHTML(comp, outputDir, bookNote)
 	if err != nil {
@@ -88,7 +83,7 @@ func getCardOutputDir(opts cardOptions) string {
 	return wd
 }
 
-func loadBookData(ctx context.Context, comp *components, opts cardOptions, args []string) (*BookNote, error) {
+func loadBookData(ctx context.Context, comp *components, opts cardOptions, args []string) (*Data, error) {
 	if opts.fromJSON != "" {
 		bn, err := loadBookNoteFromJSON(opts.fromJSON)
 		if err != nil {
@@ -101,25 +96,42 @@ func loadBookData(ctx context.Context, comp *components, opts cardOptions, args 
 		return bn, nil
 	}
 
-	bookID, err := resolveBookID(ctx, comp.datasourceClient, opts, args)
+	datasourceClient, err := comp.datasource.Get()
+	if err != nil {
+		return nil, err
+	}
+	fmt.Fprintf(os.Stderr, "✅ 已连接到豆瓣 API")
+
+	bookID, err := resolveBookID(ctx, datasourceClient, opts, args)
 	if err != nil {
 		return nil, err
 	}
 	opts.id = bookID
 
-	book, err := comp.datasourceClient.GetBookDetail(ctx, bookID)
+	book, err := datasourceClient.GetBookDetail(ctx, bookID)
 	if err != nil {
 		return nil, fmt.Errorf("获取书籍详情失败: %w", err)
 	}
 	fmt.Fprintf(os.Stderr, "✅ 已获取书籍: %s\n", book.Title)
+	themeLoader, err := comp.themeLoader.Get()
+	if err != nil {
+		return nil, err
+	}
+	themes := themeLoader.GetThemes()
+	fmt.Fprintf(os.Stderr, "✅ 已获取主题: %v\n", themes)
 
-	themes := comp.themeLoader.GetThemes()
-	genResult, err := comp.aiGen.GenerateNote(ctx, opts.style, themes, book)
+	aiGen, err := comp.aiGen.Get()
+	if err != nil {
+		return nil, err
+	}
+	fmt.Fprintf(os.Stderr, "✅ 已连接 AI 生成器")
+
+	genResult, err := aiGen.GenerateNote(ctx, opts.style, themes, book)
 	if err != nil {
 		return nil, fmt.Errorf("AI 生成笔记失败: %w", err)
 	}
 
-	bookNote := &BookNote{
+	bookNote := &Data{
 		Book:  *book,
 		Note:  genResult.MainText,
 		Tags:  genResult.Tags,
@@ -151,46 +163,68 @@ func resolveBookID(ctx context.Context, client datasource.BookSource, opts cardO
 	return "", fmt.Errorf("请提供书籍ID、使用 --book 或 --from-json")
 }
 
-func applyTheme(comp *components, bookNote *BookNote) error {
-	tm, ok := comp.themeLoader.Get(bookNote.Theme)
-	if !ok {
-		defaultTheme := "classic-dark"
-		tm, ok = comp.themeLoader.Get(defaultTheme)
-		if !ok {
-			return fmt.Errorf("默认主题 '%s' 不存在", defaultTheme)
-		}
-		fmt.Fprintf(os.Stderr, "警告: 主题 '%s' 不存在，已使用默认主题 '%s'\n", bookNote.Theme, defaultTheme)
-		bookNote.Theme = defaultTheme
+func applyTheme(comp *components, bookNote *Data) error {
+	themeLoader, err := comp.themeLoader.Get()
+	if err != nil {
+		return fmt.Errorf("获取主题加载器失败: %w", err)
 	}
-	_ = tm
+	defaultTheme := "classic-dark"
+	_, ok := themeLoader.Get(bookNote.Theme)
+	if !ok {
+		bookNote.Theme = defaultTheme
+		fmt.Fprintf(os.Stderr, "警告: 主题 '%s' 不存在，已使用默认主题 '%s'\n", bookNote.Theme, defaultTheme)
+	}
+
 	return nil
 }
 
-func renderAndSaveHTML(comp *components, outputDir string, bookNote *BookNote) (string, error) {
-	tm, _ := comp.themeLoader.Get(bookNote.Theme)
-	cardData := render.NewCardData(&bookNote.Book, bookNote.Note, &tm)
-
-	html, err := comp.renderEngine.RenderCard(cardData, render.WithFormatNoteMainText())
+func renderAndSaveHTML(comp *components, outputDir string, bookNote *Data) (string, error) {
+	renderEngine, err := comp.renderEngine.Get()
 	if err != nil {
-		return "", fmt.Errorf("渲染 HTML 失败: %w", err)
+		return "", fmt.Errorf("获取渲染引擎失败: %w", err)
+	}
+	themeLoader, err := comp.themeLoader.Get()
+	if err != nil {
+		return "", fmt.Errorf("获取主题加载器失败: %w", err)
+	}
+
+	defaultTheme := "classic-dark"
+	theme, ok := themeLoader.Get(bookNote.Theme)
+	if !ok {
+		bookNote.Theme = defaultTheme
+		fmt.Fprintf(os.Stderr, "警告: 主题 '%s' 不存在，已使用默认主题 '%s'\n", bookNote.Theme, defaultTheme)
+		theme, ok = themeLoader.Get(defaultTheme)
+		if !ok {
+			return "", fmt.Errorf("主题 '%s' 不存在", defaultTheme)
+		}
+	}
+
+	cardData := render.NewBookNoteData(&bookNote.Book, bookNote.Note, &theme)
+	html, err := renderEngine.Render(cardData, render.WithFormatBookNote())
+	if err != nil {
+		return "", fmt.Errorf("渲染 booknote HTML 失败: %w", err)
 	}
 
 	outputPrefix := getCardOutputPrefix(bookNote)
 	htmlPath := filepath.Join(outputDir, outputPrefix+".html")
 
 	if err := os.WriteFile(htmlPath, []byte(html), 0644); err != nil {
-		return "", fmt.Errorf("保存 HTML 失败: %w", err)
+		return "", fmt.Errorf("保存 booknote HTML 失败: %w", err)
 	}
-	fmt.Fprintf(os.Stderr, "✅ HTML 卡片已保存: %s\n", htmlPath)
+	fmt.Fprintf(os.Stderr, "✅ booknote  HTML 卡片已保存: %s\n", htmlPath)
 	return htmlPath, nil
 }
 
-func exportCardImage(ctx context.Context, comp *components, htmlPath string, outputDir string, bookNote *BookNote) string {
+func exportCardImage(ctx context.Context, comp *components, htmlPath string, outputDir string, bookNote *Data) string {
 	outputPrefix := getCardOutputPrefix(bookNote)
 	imagePath := filepath.Join(outputDir, outputPrefix+".png")
 
 	fmt.Fprintln(os.Stderr, "📸 正在生成图片（需要 Chrome）...")
-	if err := comp.screenshotSvc.Capture(ctx, htmlPath, imagePath); err != nil {
+	screenshotSvc, err := comp.screenshotSvc.Get()
+	if err != nil {
+		return ""
+	}
+	if err := screenshotSvc.Capture(ctx, htmlPath, imagePath); err != nil {
 		fmt.Fprintf(os.Stderr, "图片生成失败: %v\n", err)
 		return ""
 	}
@@ -198,7 +232,7 @@ func exportCardImage(ctx context.Context, comp *components, htmlPath string, out
 	return imagePath
 }
 
-func saveJSONFile(outputDir string, bookNote *BookNote) string {
+func saveJSONFile(outputDir string, bookNote *Data) string {
 	outputPrefix := getCardOutputPrefix(bookNote)
 	jsonPath := filepath.Join(outputDir, outputPrefix+".json")
 
@@ -210,14 +244,14 @@ func saveJSONFile(outputDir string, bookNote *BookNote) string {
 	return jsonPath
 }
 
-func getCardOutputPrefix(bookNote *BookNote) string {
+func getCardOutputPrefix(bookNote *Data) string {
 	if bookNote != nil && bookNote.Book.ID != "" {
 		return bookNote.Book.ID
 	}
 	return "booknote"
 }
 
-func saveBookNoteToJSON(bn *BookNote, filePath string) error {
+func saveBookNoteToJSON(bn *Data, filePath string) error {
 	data, err := json.MarshalIndent(bn, "", "  ")
 	if err != nil {
 		return err
@@ -225,12 +259,12 @@ func saveBookNoteToJSON(bn *BookNote, filePath string) error {
 	return os.WriteFile(filePath, data, 0644)
 }
 
-func loadBookNoteFromJSON(filePath string) (*BookNote, error) {
+func loadBookNoteFromJSON(filePath string) (*Data, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
-	var bn BookNote
+	var bn Data
 	if err := json.Unmarshal(data, &bn); err != nil {
 		return nil, err
 	}

@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"log"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -61,6 +62,7 @@ func (l *themeLoader) LoadAll() error {
 		if err := theme.Validate(); err != nil {
 			return fmt.Errorf("主题 %s 无效: %w", entry.Name(), err)
 		}
+
 		themes[theme.ID] = theme
 	}
 
@@ -100,9 +102,11 @@ func (l *themeLoader) Register(name string, theme Theme) error {
 func (l *themeLoader) Get(name string) (Theme, bool) {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
+	log.Printf("获取主题 %s", name)
 	if !l.loaded {
 		return Theme{}, false
 	}
 	theme, ok := l.themes[name]
+	log.Printf("获取主题 %s 成功: %v", name, ok)
 	return theme, ok
 }

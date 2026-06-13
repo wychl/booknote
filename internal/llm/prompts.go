@@ -71,7 +71,7 @@ func BuildNotePrompt(promptStyle string, themes []theme.Theme, book *datasource.
 
 	themeStr := ""
 	for _, t := range themes {
-		themeStr += fmt.Sprintf("{{%s:%s}}\n", t.ID, t.Name)
+		themeStr += fmt.Sprintf("{{%s:%s}}\n", t.ID, t.Description)
 	}
 
 	// 替换变量

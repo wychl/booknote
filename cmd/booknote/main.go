@@ -3,18 +3,12 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/spf13/cobra"
 	"github.com/wychl/booknote/internal/config"
-	"github.com/wychl/booknote/internal/datasource"
-	"github.com/wychl/booknote/internal/export"
-	"github.com/wychl/booknote/internal/llm"
-	"github.com/wychl/booknote/internal/render"
-	"github.com/wychl/booknote/internal/theme"
 )
 
 func main() {
@@ -38,48 +32,10 @@ func run(cfg *config.Config) error {
 		cancel()
 	}()
 
-	components, err := initComponents(cfg)
-	if err != nil {
-		return fmt.Errorf("初始化组件失败: %w", err)
-	}
+	components := initComponents(cfg)
 
 	rootCmd := newRootCmd(components)
 	return rootCmd.ExecuteContext(ctx)
-}
-
-type components struct {
-	datasourceClient datasource.BookSource
-	aiGen            llm.Generator
-	themeLoader      theme.Loader
-	renderEngine     render.Engine
-	screenshotSvc    export.Screenshot
-}
-
-func initComponents(cfg *config.Config) (*components, error) {
-	datasourceClient := datasource.NewBookDoubanSource(cfg.DoubanCookie)
-
-	aiGen, err := llm.NewGenerator(cfg.LLM.Provider, cfg.LLM.APIKey)
-	if err != nil {
-		return nil, fmt.Errorf("创建 AI 生成器失败: %w", err)
-	}
-
-	themeLoader, err := theme.NewThemeLoader()
-	if err != nil {
-		return nil, fmt.Errorf("加载主题失败: %w", err)
-	}
-
-	renderEngine, err := render.NewHTMLEngine()
-	if err != nil {
-		return nil, fmt.Errorf("初始化渲染引擎失败: %w", err)
-	}
-
-	return &components{
-		datasourceClient: datasourceClient,
-		aiGen:            aiGen,
-		themeLoader:      themeLoader,
-		renderEngine:     renderEngine,
-		screenshotSvc:    export.NewBookNoteScreenshot(),
-	}, nil
 }
 
 func newRootCmd(comp *components) *cobra.Command {
@@ -91,7 +47,9 @@ func newRootCmd(comp *components) *cobra.Command {
 		SilenceErrors: true,
 		SilenceUsage:  true,
 	}
-	rootCmd.AddCommand(newCardCmd(comp))
+	rootCmd.AddCommand(newBookNoteCmd(comp))
+	rootCmd.AddCommand(newQuoteCmd(comp))
+	rootCmd.AddCommand(newThemesCmd(comp))
 	return rootCmd
 }
 

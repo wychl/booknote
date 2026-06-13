@@ -5,11 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>OpenDesign · 读书笔记 | {{.Title}}</title>
     <style>
-        /* ---------- 设计令牌（由主题注入） ---------- */
+        /* ============================================================
+           读书笔记模板 · 符合《模板设计规范》v1.1
+           画布 1080×1920 · 主题驱动 · 无预设圆角/阴影
+           ============================================================ */
         :root {
             {{- .CSSVars | safeCSS -}}
         }
-
         * {
             margin: 0;
             padding: 0;
@@ -17,24 +19,25 @@
         }
 
         body {
-            background: var(--od-color-surface, #14161f);
-            font-family: var(--od-font-family, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif);
             width: 1080px;
             height: 1920px;
             margin: 0 auto;
             padding: 100px 150px 140px;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
+            background: var(--od-color-bg, #000);
         }
 
+        /* ---- 卡片容器 ---- */
         .od-note-card {
+            position: relative;
             width: 100%;
             height: 100%;
             overflow-y: auto;
             overflow-x: hidden;
             scrollbar-width: thin;
+            font-family: var(--od-font-family, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif);
         }
 
         .od-note-card::-webkit-scrollbar {
@@ -42,35 +45,40 @@
             background: transparent;
         }
         .od-note-card::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,0.2);
-            border-radius: 20px;
+            background: var(--od-color-text-low, rgba(255,255,255,0.2));
+            border-radius: var(--od-radius-full, 999px);
         }
 
+        /* ---- 安全区 ---- */
         .safe-area {
+            position: relative;
+            z-index: 2;
             min-height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: center;
         }
 
+        /* ---- 内容区块 ---- */
         .note-content {
             display: flex;
             flex-direction: column;
             gap: var(--od-space-md, 40px);
         }
 
+        /* ---- 书籍头部 ---- */
         .book-header {
             text-align: center;
-            border-bottom: 3px solid var(--od-color-divider, #2d2f3e);
+            border-bottom: 2px solid var(--od-color-divider, #2d2f3e);
             padding-bottom: var(--od-space-sm, 24px);
         }
 
         .book-title {
             font-size: var(--od-font-size-1, 84px);
             font-weight: var(--od-font-weight-bold, 700);
-            line-height: 1.2;
-            color: var(--od-color-text-title, #f3f4f6);
-            letter-spacing: -0.01em;
+            line-height: var(--od-line-height-body, 1.65);
+            color: var(--od-color-text-high, #f3f4f6);
+            letter-spacing: var(--od-letter-spacing-body, 0.02em);
             margin-bottom: var(--od-space-sm, 24px);
         }
 
@@ -85,31 +93,32 @@
         .book-author {
             font-size: var(--od-font-size-5, 32px);
             font-weight: var(--od-font-weight-medium, 500);
-            color: var(--od-color-secondary, #7c3aed);
+            color: var(--od-color-primary, #7c3aed);
         }
 
         .stars {
-            font-size: var(--od-font-size-5, 40px);
-            color: var(--od-color-star, #fbbf24);
-            letter-spacing: 10px;
+            font-size: var(--od-font-size-5, 32px);
+            color: var(--od-color-highlight, #fbbf24);
+            letter-spacing: 0.3em;
         }
 
         .score-badge {
-            background: var(--od-color-accent-paper, #1f2230);
-            padding: var(--od-space-xs, 24px) var(--od-space-sm, 40px);
+            background: var(--od-color-surface-accent, #1f2230);
+            padding: var(--od-space-xs, 12px) var(--od-space-sm, 24px);
             border-radius: var(--od-radius-full, 999px);
             font-size: var(--od-font-size-5, 32px);
-            color: var(--od-color-secondary, #7c3aed);
+            color: var(--od-color-primary, #7c3aed);
+            font-weight: var(--od-font-weight-bold, 700);
         }
 
+        /* ---- 笔记正文 ---- */
         .reflection {
             display: flex;
             flex-direction: column;
             font-size: var(--od-font-size-3, 36px);
             line-height: var(--od-line-height-body, 1.65);
             letter-spacing: var(--od-letter-spacing-body, 0.02em);
-            color: var(--od-color-text-body, #e5e7eb);
-            margin-bottom: 0;
+            color: var(--od-color-text-medium, #e5e7eb);
             white-space: pre-wrap;
             word-break: break-word;
         }

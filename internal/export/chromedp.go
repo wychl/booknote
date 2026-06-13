@@ -10,12 +10,12 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-type bookNoteScreenshot struct {
+type chromedpScreenshot struct {
 	opts []chromedp.ExecAllocatorOption
 }
 
-func NewBookNoteScreenshot() Screenshot {
-	return &bookNoteScreenshot{
+func NewChromedpScreenshot() Screenshot {
+	return &chromedpScreenshot{
 		opts: []chromedp.ExecAllocatorOption{
 			chromedp.NoFirstRun,
 			chromedp.NoDefaultBrowserCheck,
@@ -25,7 +25,7 @@ func NewBookNoteScreenshot() Screenshot {
 	}
 }
 
-func (s *bookNoteScreenshot) Capture(ctx context.Context, htmlPath, outputPath string) error {
+func (s *chromedpScreenshot) Capture(ctx context.Context, htmlPath, outputPath string) error {
 	// 检查 HTML 文件是否存在
 	if _, err := os.Stat(htmlPath); err != nil {
 		return fmt.Errorf("HTML 文件不存在: %w", err)

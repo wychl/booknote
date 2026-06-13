@@ -13,12 +13,16 @@ import (
 
 type DataOption func(any)
 
+type Data interface {
+	Template() string
+}
+
 //go:embed templates/*.tmpl
 var templateFS embed.FS
 
 // Engine 定义模板渲染接口
 type Engine interface {
-	RenderCard(data any, opts ...DataOption) (string, error)
+	Render(data Data, opts ...DataOption) (string, error)
 }
 
 // htmlEngine 实现基于 Go 模板的渲染
@@ -74,19 +78,17 @@ func (e *htmlEngine) loadTemplates() error {
 	if err != nil {
 		return err
 	}
-	if _, ok := e.templates["card"]; !ok {
-		return fmt.Errorf("未找到 card 模板")
-	}
+
 	return nil
 }
 
-// RenderCard 渲染读书笔记卡片
-func (e *htmlEngine) RenderCard(data any, opts ...DataOption) (string, error) {
+// Render 渲染读书笔记卡片
+func (e *htmlEngine) Render(data Data, opts ...DataOption) (string, error) {
 	e.mu.RLock()
-	tmpl, ok := e.templates["card"]
+	tmpl, ok := e.templates[data.Template()]
 	e.mu.RUnlock()
 	if !ok {
-		return "", fmt.Errorf("card 模板未加载")
+		return "", fmt.Errorf("%s 模板未加载", data.Template())
 	}
 
 	// 应用选项

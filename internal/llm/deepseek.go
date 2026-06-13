@@ -77,7 +77,7 @@ func (g *deepseekGenerator) GenerateNote(ctx context.Context, styleName string, 
 	if result.MainText == "" {
 		return nil, fmt.Errorf("LLM 返回的 main_text 为空")
 	}
-	result.Tags = append([]string{"推荐好书", "读书感悟人生", "山海作品推荐", book.Title, book.Author}, result.Tags...)
+	result.Tags = append([]string{"#推荐好书", "#读书感悟人生", "山海作品推荐", book.Title, book.Author}, result.Tags...)
 
 	return &result, nil
 }

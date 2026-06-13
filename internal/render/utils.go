@@ -5,33 +5,7 @@ import (
 	"math"
 	"regexp"
 	"strings"
-
-	"github.com/wychl/booknote/internal/datasource"
-	"github.com/wychl/booknote/internal/theme"
 )
-
-// CardData 包含渲染卡片所需的所有数据
-type CardData struct {
-	Title        string
-	Author       string
-	Rating       string
-	Stars        string
-	NoteMainText string
-	CSSVars      string
-}
-
-// NewCardData 从书籍信息、AI 笔记内容和主题构造 CardData
-func NewCardData(book *datasource.BookDetail, note string, theme *theme.Theme) *CardData {
-	stars := generateStarString(book.Rating)
-	return &CardData{
-		Title:        book.Title,
-		Author:       book.Author,
-		Rating:       book.Rating,
-		Stars:        stars,
-		NoteMainText: note,
-		CSSVars:      theme.CSSVars(),
-	}
-}
 
 // generateStarString 根据豆瓣评分（如 "9.4"）生成星级字符串（"★★★★★" 或 "★★★★☆"）
 func generateStarString(ratingStr string) string {
@@ -45,15 +19,6 @@ func generateStarString(ratingStr string) string {
 		fullStars = 0
 	}
 	return strings.Repeat("★", fullStars) + strings.Repeat("☆", 5-fullStars)
-}
-
-func WithFormatNoteMainText() DataOption {
-	return func(data any) {
-		if v, ok := data.(*CardData); ok {
-			v.NoteMainText = formatStrongText(v.NoteMainText)
-			v.NoteMainText = formatChineseQuotesStrong(v.NoteMainText)
-		}
-	}
 }
 
 func formatStrongText(raw string) string {

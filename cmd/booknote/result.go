@@ -15,15 +15,15 @@ type Result struct {
 	HTML     string `json:"html,omitempty"`
 	Image    string `json:"image,omitempty"`
 	JSONFile string `json:"json_file,omitempty"`
-	BookNote
+	Data     any    `json:"data,omitempty"`
 }
 
 func (r *Result) output() {
 	_ = json.NewEncoder(os.Stdout).Encode(r)
 }
 
-// BookNote 笔记数据结构
-type BookNote struct {
+// Data 笔记数据结构
+type Data struct {
 	Book  datasource.BookDetail `json:"book"`
 	Note  string                `json:"note"`
 	Theme string                `json:"theme"`
